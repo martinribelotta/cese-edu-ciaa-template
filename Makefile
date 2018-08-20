@@ -40,8 +40,10 @@ TARGET_LST=$(basename $(TARGET)).lst
 TARGET_MAP=$(basename $(TARGET)).map
 TARGET_NM=$(basename $(TARGET)).names.csv
 
+DEFINES_VAR_VAL:=$(foreach v, $(filter USE_%, $(.VARIABLES)), -DCONFIG_$(v)_$($(v)))
+
 INCLUDE_FLAGS=$(foreach m, $(MODULES), -I$(m)/inc) -I$(PROJECT_PATH_AND_NAME)/inc $(INCLUDES)
-DEFINES_FLAGS=$(foreach m, $(DEFINES), -D$(m))
+DEFINES_FLAGS=$(foreach m, $(DEFINES), -D$(m)) $(DEFINES_VAR_VAL)
 OPT_FLAGS=-ggdb3 -O$(OPT) -ffunction-sections -fdata-sections
 
 COMMON_FLAGS=$(ARCH_FLAGS) $(DEFINES_FLAGS) $(INCLUDE_FLAGS) $(OPT_FLAGS)
@@ -58,7 +60,7 @@ ifeq ($(USE_NANO),y)
 LDFLAGS+=--specs=nano.specs
 endif
 
-ifeq ($(SEMIHOST),y)
+ifeq ($(USE_SEMIHOST),y)
 LDFLAGS+=--specs=rdimon.specs
 endif
 

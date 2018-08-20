@@ -44,14 +44,11 @@
 
 ---------------------------------------------------------------------------*/
 
-static volatile
-DSTATUS Stat = STA_NOINIT;	/* Disk status */
+static volatile DSTATUS Stat = STA_NOINIT;	/* Disk status */
 
-static volatile
-BYTE Timer1, Timer2;	/* 100Hz decrement timer */
+static volatile BYTE Timer1, Timer2;	/* 100Hz decrement timer */
 
-static
-BYTE CardType;			/* Card type flags */
+static BYTE CardType;			/* Card type flags */
 
 static void SSPSend(uint8_t *buf, uint32_t Length)
 {
@@ -316,13 +313,10 @@ BYTE send_cmd (
 /* Initialize Disk Drive                                                 */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_initialize (
-	BYTE drv		/* Physical drive nmuber (0) */
-)
+DSTATUS SD_disk_initialize ()
 {
 	BYTE n, cmd, ty, ocr[4];
 
-	if (drv) return STA_NOINIT;			/* Supports only single drive */
 	if (Stat & STA_NODISK) return Stat;	/* No card in the socket */
 
 	power_on();							/* Force socket power on */
@@ -331,7 +325,7 @@ DSTATUS disk_initialize (
 
 	ty = 0;
 	if (send_cmd(CMD0_, 0) == 1) {			/* Enter Idle state */
-		Timer1 = 100;						/* Initialization timeout of 1000 msec */
+		// Timer1 = 100;						/* Initialization timeout of 1000 msec */
 		if (send_cmd(CMD8, 0x1AA) == 1) {	/* SDHC */
 			for (n = 0; n < 4; n++) ocr[n] = rcvr_spi();		/* Get trailing return value of R7 resp */
 			if (ocr[2] == 0x01 && ocr[3] == 0xAA) {				/* The card can work at vdd range of 2.7-3.6V */
@@ -371,11 +365,8 @@ DSTATUS disk_initialize (
 /* Get Disk Status                                                       */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_status (
-	BYTE drv		/* Physical drive nmuber (0) */
-)
+DSTATUS SD_disk_status ()
 {
-	if (drv) return STA_NOINIT;		/* Supports only single drive */
 	return Stat;
 }
 
@@ -385,14 +376,9 @@ DSTATUS disk_status (
 /* Read Sector(s)                                                        */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_read (
-	BYTE drv,			/* Physical drive nmuber (0) */
-	BYTE *buff,			/* Pointer to the data buffer to store read data */
-	DWORD sector,		/* Start sector number (LBA) */
-	UINT count			/* Sector count (1..255) */
-)
+DRESULT SD_disk_read (BYTE *buff, DWORD sector, UINT count)
 {
-	if (drv || !count) return RES_PARERR;
+	if (!count) return RES_PARERR;
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 
 	if (!(CardType & CT_BLOCK)) sector *= 512;	/* Convert to byte address if needed */
@@ -423,14 +409,9 @@ DRESULT disk_read (
 /*-----------------------------------------------------------------------*/
 
 #if _READONLY == 0
-DRESULT disk_write (
-	BYTE drv,			/* Physical drive nmuber (0) */
-	const BYTE *buff,	/* Pointer to the data to be written */
-	DWORD sector,		/* Start sector number (LBA) */
-	UINT count			/* Sector count (1..255) */
-)
+DRESULT SD_disk_write (const BYTE *buff, DWORD sector, UINT count)
 {
-	if (drv || !count) return RES_PARERR;
+	if (!count) return RES_PARERR;
 	if (Stat & STA_NOINIT) return RES_NOTRDY;
 	if (Stat & STA_PROTECT) return RES_WRPRT;
 
@@ -465,18 +446,11 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 
 #if _USE_IOCTL != 0
-DRESULT disk_ioctl (
-	BYTE drv,		/* Physical drive nmuber (0) */
-	BYTE ctrl,		/* Control code */
-	void *buff		/* Buffer to send/receive control data */
-)
+DRESULT SD_disk_ioctl (BYTE ctrl, void *buff)
 {
 	DRESULT res;
 	BYTE n, csd[16], *ptr = buff;
 	WORD csize;
-
-
-	if (drv) return RES_PARERR;
 
 	res = RES_ERROR;
 

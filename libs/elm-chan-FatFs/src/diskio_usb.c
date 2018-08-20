@@ -29,6 +29,7 @@
  * this code.
  */
 
+#ifdef CONFIG_USE_FATFS_USB_y
 #include "fsusb_cfg.h"
 #include "board.h"
 #include "chip.h"
@@ -39,9 +40,6 @@
 
 /* Disk Status */
 static volatile DSTATUS Stat = STA_NOINIT;
-
-/* 100Hz decrement timer stopped at zero (disk_timerproc()) */
-static volatile WORD Timer2;
 
 static DISK_HANDLE_T *hDisk;
 
@@ -58,11 +56,8 @@ static DISK_HANDLE_T *hDisk;
  ****************************************************************************/
 
 /* Initialize Disk Drive */
-DSTATUS disk_initialize(BYTE drv)
+DSTATUS USBH_disk_initialize()
 {
-	if (drv) {
-		return STA_NOINIT;				/* Supports only single drive */
-	}
 	/*	if (Stat & STA_NODISK) return Stat;	*//* No card in the socket */
 
 	if (Stat != STA_NOINIT) {
@@ -93,14 +88,11 @@ DSTATUS disk_initialize(BYTE drv)
 
 }
 
-/* Disk Drive miscellaneous Functions */
-DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
+/* Disk USBH_Drive miscellaneous Functions */
+DRESULT USBH_disk_ioctl(BYTE ctrl, void *buff)
 {
 	DRESULT res;
 
-	if (drv) {
-		return RES_PARERR;
-	}
 	if (Stat & STA_NOINIT) {
 		return RES_NOTRDY;
 	}
@@ -138,9 +130,9 @@ DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
 }
 
 /* Read Sector(s) */
-DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
+DRESULT USBH_disk_read(BYTE *buff, DWORD sector, BYTE count)
 {
-	if (drv || !count) {
+	if (!count) {
 		return RES_PARERR;
 	}
 	if (Stat & STA_NOINIT) {
@@ -155,19 +147,15 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 }
 
 /* Get Disk Status */
-DSTATUS disk_status(BYTE drv)
+DSTATUS USBH_disk_status()
 {
-	if (drv) {
-		return STA_NOINIT;	/* Supports only single drive */
-	}
 	return Stat;
 }
 
 /* Write Sector(s) */
-DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, BYTE count)
+DRESULT USBH_disk_write(const BYTE *buff, DWORD sector, BYTE count)
 {
-
-	if (drv || !count) {
+	if (!count) {
 		return RES_PARERR;
 	}
 	if (Stat & STA_NOINIT) {
@@ -180,3 +168,4 @@ DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, BYTE count)
 
 	return RES_ERROR;
 }
+#endif
