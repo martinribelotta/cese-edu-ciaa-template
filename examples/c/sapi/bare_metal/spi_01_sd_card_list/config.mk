@@ -1,6 +1,6 @@
 # Compile options
 
-VERBOSE=y
+VERBOSE=n
 OPT=g
 USE_NANO=y
 USE_SEMIHOST=n

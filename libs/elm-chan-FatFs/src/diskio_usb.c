@@ -28,11 +28,12 @@
  * copyright, permission, and disclaimer notice must appear in all copies of
  * this code.
  */
+#include "board.h"
+#include "chip.h"
+#include "diskio.h"
 
 #ifdef CONFIG_USE_FATFS_USB_y
 #include "fsusb_cfg.h"
-#include "board.h"
-#include "chip.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -168,4 +169,31 @@ DRESULT USBH_disk_write(const BYTE *buff, DWORD sector, BYTE count)
 
 	return RES_ERROR;
 }
+#else
+/* Initialize Disk Drive */
+DSTATUS USBH_disk_initialize()
+{
+	return STA_NOINIT;
+}
+
+DRESULT USBH_disk_ioctl(BYTE ctrl, void *buff)
+{
+   return RES_ERROR;
+}
+
+DSTATUS USBH_disk_status()
+{
+	return STA_NOINIT;
+}
+
+DRESULT USBH_disk_read(BYTE *buff, DWORD sector, BYTE count)
+{
+   return RES_ERROR;
+}
+
+DRESULT USBH_disk_write(const BYTE *buff, DWORD sector, BYTE count)
+{
+	return RES_ERROR;
+}
+
 #endif

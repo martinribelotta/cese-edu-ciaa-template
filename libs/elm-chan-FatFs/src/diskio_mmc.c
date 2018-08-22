@@ -9,6 +9,12 @@
 #include "board.h"
 #include "diskio.h"
 
+#define CT_MMC         0x01            /* MMC ver 3 */
+#define CT_SD1         0x02            /* SD ver 1 */
+#define CT_SD2         0x04            /* SD ver 2 */
+#define CT_SDC         (CT_SD1|CT_SD2) /* SD */
+#define CT_BLOCK       0x08            /* Block addressing */
+
 /* Definitions for MMC/SDC command */
 #define CMD0_	(0x40+0)	    /* GO_IDLE_STATE */
 #define CMD1	(0x40+1)	    /* SEND_OP_COND (MMC) */
@@ -445,7 +451,6 @@ DRESULT SD_disk_write (const BYTE *buff, DWORD sector, UINT count)
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
 
-#if _USE_IOCTL != 0
 DRESULT SD_disk_ioctl (BYTE ctrl, void *buff)
 {
 	DRESULT res;
@@ -566,8 +571,6 @@ DRESULT SD_disk_ioctl (BYTE ctrl, void *buff)
 
 	return res;
 }
-#endif /* _USE_IOCTL != 0 */
-
 
 /*-----------------------------------------------------------------------*/
 /* Device Timer Interrupt Procedure  (Platform dependent)                */
