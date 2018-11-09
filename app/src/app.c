@@ -1,94 +1,127 @@
 #include <sapi.h>
+#include <sapi_usbms.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <ff.h>
+#include <microrl.h>
 
-static char buffer[128];
+typedef struct {
+    const char *cmd;
+    int (*func)(int argc, const char * const *argv);
+    const char *info;
+} ExecEntry_t;
 
-static void readline(uartMap_t uart, char *s, size_t z) {
-    bool_t eol = FALSE;
-    size_t n = 0;
-    *s = 0;
-    while(!eol) {
-        uint8_t c;
-        if (uartReadByte(uart, &c)) {
-            if (!iscntrl(c)) {
-                s[n] = (char) c;
-                uartWriteByte(uart, c);
-                if (n < z) {
-                    n++;
-                    s[n] = 0;
-                }
-            }
-            switch (c) {
-            case '\r':
-            case '\n':
-                eol = TRUE;
-                break;
-            }
-        } else
-            sleepUntilNextInterrupt();
-    }
-}
-
-static char *skipspaces(char *s, const char *end) {
-    while (*s && isspace((int)*s)) {
-        if (s >= end)
-            return NULL;
-        s++;
-    }
-    return s;
-}
-
-static char *nextspace(char *s, const char *end) {
-    while (*s && !isspace((int)*s)) {
-        if (s >= end)
-            return NULL;
-        s++;
-    }
-    return s;
-}
-
-static int parsearg(char *s, size_t max, const char **const argv, int maxargc) {
-    int argc = 0;
-    const char *end = s + max;
-    while (*s) {
-        s = skipspaces(s, end);
-        if (!s || !*s)
-            break;
-        argv[argc] = s;
-        argc++;
-        s = nextspace(s, end);
-        if (!s || !*s)
-            break;
-        *s++ = '\0';
-        if (argc >= maxargc)
-            break;
-    }
-    return argc;
-}
-
-static int exec(int argc, const char **argv) {
-    // TODO
-    printf("Try to exec %s with %d parameters:\n", argv[0], argc - 1);
+static int func_echo(int argc, const char * const *argv) {
     for (int i=1; i<argc; i++)
-        printf("  %s\n", argv[i]);
+        printf("%s ", argv[i]);
+    printf("\n");
     return 0;
 }
 
-static void repl() {
-    static const char *argv[10];
-    printf(">> ");
-    fflush(stdout);
-    readline(UART_USB, buffer, sizeof(buffer));
-    int argc = parsearg(buffer, sizeof(buffer), argv, 10);
-    puts("");
-    if (argc)
-         exec(argc, argv);
+static int func_ls(int argc, const char * const *argv) {
+    (void) argc;
+    (void) argv;
+    for(int i=1; i<argc; i++) {
+        FILINFO info;
+        DIR dir;
+        if (f_opendir(&dir, argv[i]) == FR_OK) {
+            printf("Directoriy %s contents:\n", argv[i]);
+            while (f_readdir(&dir, &info) == FR_OK) {
+                if (info.fname[0] == 0)
+                    break;
+                char type[] = "   ";
+                if (info.fattrib & AM_RDO)
+                    type[2] = 'R';
+                if (info.fattrib & AM_HID)
+                    type[1] = 'H';
+                if (info.fattrib & AM_SYS)
+                    type[0] = 'S';
+                char isDir = (info.fattrib&AM_DIR)? '*' : ' ';
+                printf(" %s%c%-40s %lld bytes\n", type, isDir, info.fname, info.fsize);
+            }
+        } else {
+            printf("Cannot list %s\n", argv[i]);
+        }
+    }
+    return 0;
 }
 
+static int func_info(int argc, const char * const *argv);
+
+static ExecEntry_t cmdList[] = {
+    { "echo", func_echo, "print echo of text" },
+    { "ls", func_ls, "list directory" },
+    { "info", func_info, "system info" },
+    { "help", func_info, "system info [same as info]" },
+    { "?", func_info, "system info [same as info]" },
+};
+
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+
+static int func_info(int argc, const char * const *argv) {
+    (void) argc;
+    (void) argv;
+    printf("Build on %s at %s\n"
+           "  with compiler %s\n"
+           "  for cortex-m%d\n\n"
+           "List of commands:\n",
+           __DATE__, __TIME__,
+           __VERSION__,
+           __CORTEX_M);
+    for (size_t i=0; i<ARRAY_SIZE(cmdList); i++)
+        printf("  %s %-20s\n", cmdList[i].cmd, cmdList[i].info);
+    return 0;
+}
+
+static int executeCommand(int argc, const char * const *argv) {
+    printf("\n");
+    for (size_t i=0; i<ARRAY_SIZE(cmdList); i++)
+        if (strcmp(cmdList[i].cmd, argv[0]) == 0) {
+            int r = cmdList[i].func(argc, argv);
+            fflush(stdout);
+            fflush(stderr);
+            return r;
+        }
+    printf("Unrecognized command %s\n", argv[0]);
+    return -1;
+}
+
+static void stdout_putstr(const char *s) {
+    fprintf(stdout, "%s", s);
+    fflush(stdout);
+}
+
+void distkTickHook(void *ptr) {
+    (void) ptr;
+    disk_timerproc();
+}
+
+static usbms_t disk;
+
 int main( void ) {
+    microrl_t rl;
+
     boardConfig();
-    puts("Welcome!!!");
-    while( TRUE )
-        repl();
+    tickConfig(1);
+    tickCallbackSet(distkTickHook, NULL);
+    if (!usbmsInit(&disk))
+        printf("Error init disk\n");
+    else {
+        printf("Waiting for USB ready\n");
+        while (usbmsStatus() != USBMS_Status_StorageReadyMounted) {
+            printf(".");
+            fflush(stdout);
+            delay(1000);
+        }
+    }
+
+    microrl_init(&rl, stdout_putstr);
+    microrl_set_execute_callback(&rl, executeCommand);
+    while(TRUE) {
+        uint8_t c;
+        if (uartReadByte(UART_USB, &c)) {
+            microrl_insert_char(&rl, c);
+        }
+    }
 }

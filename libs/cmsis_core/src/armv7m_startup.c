@@ -14,7 +14,7 @@ extern void SystemInit(void);
 extern void _vStackTop(void);
 extern void __valid_user_code_checksum(void);
 
-void Reset_Handler(void);
+__attribute__((noreturn)) void Reset_Handler(void);
 WEAK void NMI_Handler(void);
 WEAK void HardFault_Handler(void);
 WEAK void MemManage_Handler(void);
@@ -24,6 +24,8 @@ WEAK void SVC_Handler(void);
 WEAK void DebugMon_Handler(void);
 WEAK void PendSV_Handler(void);
 WEAK void SysTick_Handler(void);
+
+extern void (* const g_pfnVectors[])(void);
 
 __attribute__ ((used,section(".isr_vector")))
 void (* const g_pfnVectors[])(void) = {
@@ -108,47 +110,48 @@ void Reset_Handler(void) {
     }
 }
 
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void NMI_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+
+__attribute__ ((section(".after_vectors"), noreturn))
 void HardFault_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void MemManage_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void BusFault_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void UsageFault_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void SVC_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void DebugMon_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void PendSV_Handler(void) {
     while (1) {
     }
 }
-__attribute__ ((section(".after_vectors")))
+__attribute__ ((section(".after_vectors"), noreturn))
 void SysTick_Handler(void) {
     while (1) {
     }
