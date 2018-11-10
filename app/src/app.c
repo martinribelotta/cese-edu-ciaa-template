@@ -39,8 +39,8 @@ static int func_ls(int argc, const char * const *argv) {
                     type[1] = 'H';
                 if (info.fattrib & AM_SYS)
                     type[0] = 'S';
-                char isDir = (info.fattrib&AM_DIR)? '*' : ' ';
-                printf(" %s%c%-40s %lld bytes\n", type, isDir, info.fname, info.fsize);
+                const char *isDir = (info.fattrib&AM_DIR)? "\033[94m" : "\033[32m";
+                printf(" %s%s%-40s\033[39m %lld bytes\n", type, isDir, info.fname, info.fsize);
             }
         } else {
             printf("Cannot list %s\n", argv[i]);
