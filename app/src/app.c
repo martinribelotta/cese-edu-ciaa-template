@@ -14,6 +14,10 @@ typedef struct {
     const char *info;
 } ExecEntry_t;
 
+static void f_printError(const char *s, FRESULT r) {
+    printf("%s: %s\n", s, f_resultString(r));
+}
+
 static int func_echo(int argc, const char * const *argv) {
     for (int i=1; i<argc; i++)
         printf("%s ", argv[i]);
@@ -83,11 +87,34 @@ static int func_usb(int argc, const char * const *argv) {
     return 0;
 }
 
+static int func_cat(int argc, const char * const *argv) {
+    for (int i=1; i<argc; i++) {
+        FIL f;
+        FRESULT r = f_open(&f, argv[i], FA_READ);
+        if (r == FR_OK) {
+            while (!f_eof(&f)) {
+                static char buf[32];
+                UINT readed;
+                r = f_read(&f, buf, sizeof(buf), &readed);
+                if (r != FR_OK) {
+                    f_printError("Error reading file", r);
+                    break;
+                }
+                fwrite(buf, sizeof(char), readed, stdout);
+            }
+            fflush(stdout);
+        } else
+            f_printError("Error opening file", r);
+    }
+    return 0;
+}
+
 static int func_info(int argc, const char * const *argv);
 
 static ExecEntry_t cmdList[] = {
     { "echo", func_echo, "print echo of text" },
     { "ls", func_ls, "list directory" },
+    { "cat", func_cat, "concat archives to stdout" },
     { "usb", func_usb, "usb utility" },
     { "info", func_info, "system info" },
     { "help", func_info, "system info [same as info]" },
