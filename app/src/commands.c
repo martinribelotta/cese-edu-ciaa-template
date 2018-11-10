@@ -5,7 +5,38 @@
 #include <sapi.h>
 #include <ff.h>
 
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+
 static usbms_t disk;
+
+static int func_echo(int argc, const char * const *argv);
+static int func_ls(int argc, const char * const *argv);
+static int func_usb(int argc, const char * const *argv);
+static int func_cat(int argc, const char * const *argv);
+static int func_info(int argc, const char * const *argv);
+
+static ExecEntry_t cmdList[] = {
+    { "echo", func_echo, "print echo of text" },
+    { "ls", func_ls, "list directory" },
+    { "cat", func_cat, "concat archives to stdout" },
+    { "usb", func_usb, "usb utility" },
+    { "info", func_info, "system info" },
+    { "help", func_info, "system info [same as info]" },
+    { "?", func_info, "system info [same as info]" },
+};
+
+int executeCommand(int argc, const char * const *argv) {
+    printf("\n");
+    for (size_t i=0; i<ARRAY_SIZE(cmdList); i++)
+        if (strcmp(cmdList[i].cmd, argv[0]) == 0) {
+            int r = cmdList[i].func(argc, argv);
+            fflush(stdout);
+            fflush(stderr);
+            return r;
+        }
+    printf("Unrecognized command %s\n", argv[0]);
+    return -1;
+}
 
 static void f_printError(const char *s, FRESULT r) {
     printf("%s: %s\n", s, f_resultString(r));
@@ -102,20 +133,6 @@ static int func_cat(int argc, const char * const *argv) {
     return 0;
 }
 
-static int func_info(int argc, const char * const *argv);
-
-static ExecEntry_t cmdList[] = {
-    { "echo", func_echo, "print echo of text" },
-    { "ls", func_ls, "list directory" },
-    { "cat", func_cat, "concat archives to stdout" },
-    { "usb", func_usb, "usb utility" },
-    { "info", func_info, "system info" },
-    { "help", func_info, "system info [same as info]" },
-    { "?", func_info, "system info [same as info]" },
-};
-
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
-
 static int func_info(int argc, const char * const *argv) {
     (void) argc;
     (void) argv;
@@ -129,17 +146,4 @@ static int func_info(int argc, const char * const *argv) {
     for (size_t i=0; i<ARRAY_SIZE(cmdList); i++)
         printf("  %s %-20s\n", cmdList[i].cmd, cmdList[i].info);
     return 0;
-}
-
-int executeCommand(int argc, const char * const *argv) {
-    printf("\n");
-    for (size_t i=0; i<ARRAY_SIZE(cmdList); i++)
-        if (strcmp(cmdList[i].cmd, argv[0]) == 0) {
-            int r = cmdList[i].func(argc, argv);
-            fflush(stdout);
-            fflush(stderr);
-            return r;
-        }
-    printf("Unrecognized command %s\n", argv[0]);
-    return -1;
 }
