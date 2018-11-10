@@ -36,3 +36,4 @@ libs/sapi/sapi_v0.5.2/soc/peripherals/inc
 libs/sapi/sapi_v0.5.2/soc/peripherals/usb/device/inc
 libs/sapi/sapi_v0.5.2/soc/peripherals/usb/host/inc
 libs/sys_newlib//inc
+app/src

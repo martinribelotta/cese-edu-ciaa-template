@@ -292,8 +292,10 @@ typedef struct _USB_SETUP_PACKET USB_SETUP_PACKET;
 #define USB_CONFIG_REMOTE_WAKEUP               0x20
 /** @} */
 
+#ifndef USB_CONFIG_POWER_MA
 /** bMaxPower in Configuration Descriptor */
 #define USB_CONFIG_POWER_MA(mA)                ((mA)/2)
+#endif
 
 /** bEndpointAddress in Endpoint Descriptor 
  * @{ 
