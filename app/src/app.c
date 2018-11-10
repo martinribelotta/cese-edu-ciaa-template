@@ -6,6 +6,8 @@
 #include <ff.h>
 #include <microrl.h>
 
+static usbms_t disk;
+
 typedef struct {
     const char *cmd;
     int (*func)(int argc, const char * const *argv);
@@ -47,11 +49,46 @@ static int func_ls(int argc, const char * const *argv) {
     return 0;
 }
 
+static int func_usb(int argc, const char * const *argv) {
+    for (int i=1; i<argc; i++) {
+        if (strcmp(argv[i], "init") == 0) {
+            if (usbmsStatus() == USBMS_Status_StorageReadyMounted) {
+                FRESULT r = f_mount(&disk.fatFs, usbmsDriveName(), 1);
+                printf("Init: %s\n", f_resultString(r));
+                continue;
+            }
+            if (!usbmsInit(&disk))
+                printf("Error init disk\n");
+            else {
+                printf("Waiting for USB ready\n");
+                while (usbmsStatus() != USBMS_Status_StorageReadyMounted) {
+                    printf(".");
+                    fflush(stdout);
+                    delay(1000);
+                    uint8_t c;
+                    if (uartReadByte(UART_USB, &c)) {
+                        if (c == 27)
+                            break;
+                    }
+                }
+            }
+        } else if (strcmp(argv[i], "end") == 0) {
+            f_unmount(usbmsDriveName());
+        } else if (strcmp(argv[i], "help") == 0) {
+            printf("usage: %s [init|end]\n", argv[0]);
+        } else {
+            printf("Unrecognized command %s\n", argv[i]);
+        }
+    }
+    return 0;
+}
+
 static int func_info(int argc, const char * const *argv);
 
 static ExecEntry_t cmdList[] = {
     { "echo", func_echo, "print echo of text" },
     { "ls", func_ls, "list directory" },
+    { "usb", func_usb, "usb utility" },
     { "info", func_info, "system info" },
     { "help", func_info, "system info [same as info]" },
     { "?", func_info, "system info [same as info]" },
@@ -97,25 +134,12 @@ void distkTickHook(void *ptr) {
     disk_timerproc();
 }
 
-static usbms_t disk;
-
 int main( void ) {
     microrl_t rl;
 
     boardConfig();
     tickConfig(1);
     tickCallbackSet(distkTickHook, NULL);
-    if (!usbmsInit(&disk))
-        printf("Error init disk\n");
-    else {
-        printf("Waiting for USB ready\n");
-        while (usbmsStatus() != USBMS_Status_StorageReadyMounted) {
-            printf(".");
-            fflush(stdout);
-            delay(1000);
-        }
-    }
-
     microrl_init(&rl, stdout_putstr);
     microrl_set_execute_callback(&rl, executeCommand);
     while(TRUE) {

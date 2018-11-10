@@ -34,6 +34,7 @@
 
 #include "fsusb.h"
 #include "ff.h"
+#include "sapi_ffcommon.h"
 
 #ifdef __cplusplus
 extern "C" {

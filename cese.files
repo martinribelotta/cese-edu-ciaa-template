@@ -4,6 +4,7 @@ libs/cmsis_dsp//module.mk
 libs/fatfs//module.mk
 libs/freertos//module.mk
 libs/lpc_fatfs_disks//module.mk
+libs/lpc_fatfs_disks/sapi/inc/sapi_ffcommon.h
 libs/lpc_open//module.mk
 libs/lpcusblib//module.mk
 libs/sapi//module.mk
