@@ -14,11 +14,13 @@ static int func_ls(int argc, const char * const *argv);
 static int func_usb(int argc, const char * const *argv);
 static int func_cat(int argc, const char * const *argv);
 static int func_info(int argc, const char * const *argv);
+extern int func_exec(int argc, const char * const *argv);
 
 static ExecEntry_t cmdList[] = {
     { "echo", func_echo, "print echo of text" },
     { "ls", func_ls, "list directory" },
     { "cat", func_cat, "concat archives to stdout" },
+    { "exec", func_exec, "load and execute elf" },
     { "usb", func_usb, "usb utility" },
     { "info", func_info, "system info" },
     { "help", func_info, "system info [same as info]" },

@@ -2,6 +2,7 @@ Makefile
 app/config.mk
 app/inc/commands.h
 app/src/commands.c
+app/src/exec.c
 libs/cmsis_dsp//module.mk
 libs/fatfs//module.mk
 libs/freertos//module.mk
@@ -13,6 +14,7 @@ libs/sapi//module.mk
 project.mk
 app/src/app.c
 libs/cmsis_core//src/armv7m_startup.c
+libs/elfloader/src/loader.c
 libs/microrl/src/microrl.c
 libs/fatfs/source/ff.c
 libs/fatfs/source/ffunicode.c
@@ -112,6 +114,9 @@ libs/sapi/sapi_v0.5.2/soc/peripherals/usb/device/src/sapi_usb_device.c
 libs/sapi/sapi_v0.5.2/soc/peripherals/usb/device/src/usbd_keyboard.c
 libs/sys_newlib//src/system.c
 app/inc/app.h
+libs/elfloader/inc/elf.h
+libs/elfloader/inc/loader.h
+libs/elfloader/inc/loader_config.h
 libs/cmsis_core//inc/cmsis_armcc.h
 libs/cmsis_core//inc/cmsis_armclang.h
 libs/cmsis_core//inc/cmsis_compiler.h
